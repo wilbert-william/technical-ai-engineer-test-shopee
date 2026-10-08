@@ -1,0 +1,9 @@
+# local env
+.vscode
+.venv
+
+# cache
+__pycache__/
+
+# large files
+*.csv
