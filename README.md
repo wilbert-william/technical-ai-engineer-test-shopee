@@ -10,6 +10,8 @@ The results of the Engineering Knowledge AI Agent Test are available in the [Kno
 
 Please Place the provided datasets in the `data/` directory:
 
+```
 data/
 ├── customer-100000.csv
 └── customers-2000000.csv
+```
