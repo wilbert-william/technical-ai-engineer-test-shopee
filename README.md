@@ -34,3 +34,20 @@ Please check [coding_test_no3.md](./2.coding_test/3.coding_test_no3.md) for the 
 
 Please check [docker-compose.yml](./docker-compose.yml) to see how vector DB is deployed, I'm using qdrant.
 Please check [cosine-similarity.ipynb](./2.coding_test/4.cosine-similarity.ipynb) for the answer how I implement vector cosine similarity without high level library, I'm using numpy
+
+#### **5. Create a platform with UI**
+
+### Application workflow (for question no 5)
+![workflow](assets/workflow_diagram.jpg)
+
+**Tech Stack**
+- **Frontend:** Streamlit
+- **Backend API:** FastAPI
+- **OCR:** PaddleOCR
+- **Vector Database:** Qdrant
+- **AI Agent Framework:** LangChain
+- **LLM:** gpt-6-luna
+- **Observability:** Langfuse
+- **Containerization:** Docker
+- **Container Orchestration:** Docker Compose
+- **CI/CD:** GitHub Actions
