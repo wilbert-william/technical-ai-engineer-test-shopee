@@ -11,9 +11,10 @@ class Agents:
         agent = create_agent(
             model=self.llm,
             system_prompt=self.system_prompt,
+            
         )
 
-        result = agent.invoke(
+        stream = agent.stream_events(
             {
                 "messages": [
                     {
@@ -21,7 +22,10 @@ class Agents:
                         "content": user_input,
                     }
                 ]
-            }
+            },
+            version="v3"
         )
 
-        return result["messages"][-1].content
+        for message in stream.messages:
+            for delta in message.text:
+                yield delta
