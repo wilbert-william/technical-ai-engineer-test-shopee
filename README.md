@@ -27,3 +27,5 @@ Please check [customers-small](./customers-small.ipynb) notebook for the full an
 Please check [customers-large](./customers-large.ipynb) notebook for the full answer
 
 #### 3. Explain how it's different from splitting the small vs large files.
+
+Please check [coding_test_no3.md](./coding_test_no3.md) for the full answer
