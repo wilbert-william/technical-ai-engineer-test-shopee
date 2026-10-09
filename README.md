@@ -29,3 +29,5 @@ Please check [customers-large](./customers-large.ipynb) notebook for the full an
 #### 3. Explain how it's different from splitting the small vs large files.
 
 Please check [coding_test_no3.md](./coding_test_no3.md) for the full answer
+
+#### 4. Deploy the vector DB on your own, and implement the `vector cosine similarity` without using a high level library. 
