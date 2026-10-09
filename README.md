@@ -6,7 +6,7 @@ Technical test for shopee AI engineer position
 The results of the Engineering Knowledge AI Agent Test are available in the [Knowledge Test](./knowledge_test.md).
 
 ## Coding Test 
-### Running with the full dataset
+### Running with the full dataset (for question no 1 and 2)
 
 Please Place the provided datasets in the `data/` directory:
 
@@ -15,3 +15,9 @@ data/
 ├── customer-100000.csv
 └── customers-2000000.csv
 ```
+
+#### 1. Please parse this csv, get the insight of the data customer-100000.csv
+
+Please check [customers-small](./customers-small.ipynb) notebook for the full answer
+
+#### 2. Please parse large CSV, customers-2000000.csv and keep the memory low.
