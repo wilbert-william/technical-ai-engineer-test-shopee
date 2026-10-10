@@ -3,7 +3,7 @@ name: Build and Deploy Food Receipt AI
 on:
   push:
     branches:
-      - main
+      - master
   workflow_dispatch:
 
 permissions:
