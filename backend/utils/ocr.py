@@ -4,9 +4,7 @@ from PIL import Image
 from io import BytesIO
 
 
-ocr = PaddleOCR(
-    lang="en",
-)
+ocr = PaddleOCR(lang="id")
 
 
 def extract_text(image_bytes: bytes) -> str:
@@ -18,7 +16,11 @@ def extract_text(image_bytes: bytes) -> str:
     extracted_text = []
 
     for result in results:
-        data = result.get("rec_texts", [])
-        extracted_text.extend(data)
+        result_data = result.json
+        data = result_data.get("res", {}).get("rec_texts", [])
+
+        extracted_text.extend(
+            text for text in data if text.strip()
+        )
 
     return "\n".join(extracted_text)
