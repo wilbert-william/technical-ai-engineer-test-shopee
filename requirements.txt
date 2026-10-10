@@ -1,0 +1,17 @@
+fastapi
+uvicorn[standard]
+pydantic
+python-dotenv
+python-multipart
+langchain
+langchain-openai
+jupyter
+pandas
+matplotlib
+numpy
+qdrant-client
+sqlalchemy
+psycopg[binary]
+paddleocr
+pillow
+langchain-text-splitters

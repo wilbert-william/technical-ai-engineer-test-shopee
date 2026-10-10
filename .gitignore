@@ -1,6 +1,7 @@
 # local env
 .vscode
 .venv
+.env
 
 # cache
 __pycache__/
