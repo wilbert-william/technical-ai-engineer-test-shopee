@@ -51,3 +51,47 @@ Please check [cosine-similarity.ipynb](./2.coding_test/4.cosine-similarity.ipynb
 - **Containerization:** Docker
 - **Container Orchestration:** Docker Compose
 - **CI/CD:** GitHub Actions
+
+
+## How to run the app
+
+### 1. Clone the Repository
+
+```
+git clone <repository-url>
+cd technical-ai-engineer-test-shopee
+```
+
+### 2. Configure Environment Variables
+
+Create a .env file from the example: [.env.example](.env.example)
+
+### 3. Start All Services
+
+from the root project, run:
+```
+docker compose up --build -d
+```
+
+### 4. Verify the Services
+
+Check the status of the running containers:
+```
+docker compose ps
+```
+
+### 5. Access the Application
+
+Once the services are running, access the API documentation at:
+
+FastAPI Swagger UI: http://localhost:8000/docs
+
+FastAPI ReDoc: http://localhost:8000/redoc
+
+### 6. Stop the Application
+
+Stop all services:
+
+docker compose down
+
+Docker volumes are preserved by default, so persistent database data remains available when the services are started again.

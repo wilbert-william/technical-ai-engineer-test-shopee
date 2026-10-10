@@ -3,6 +3,8 @@ from langchain_core.messages import AIMessageChunk
 
 from backend.utils import llm, prompt
 from backend.modules.vector_db import VectorDB
+from backend.utils.checkpointer import checkpointer
+from backend.utils.langfuse import LANGFUSE_TRACING, langfuse_handler
 
 
 class Agents:
@@ -14,6 +16,7 @@ class Agents:
             model=self.llm,
             system_prompt=self.system_prompt,
             tools=[self.rag_tools],
+            checkpointer=checkpointer
         )
 
     def rag_tools(self, text: str, top_k: int = 3) -> list[dict]:
@@ -27,11 +30,21 @@ class Agents:
             limit=top_k,
         )
 
-    def ai_agent(self, user_input: str, history: list[dict] | None = None):
-        messages = (history or []) + [{"role": "user", "content": user_input}]
+    def ai_agent(self, user_input: str, session_id: str):
+        config = {
+            "configurable": {
+                "thread_id": session_id,
+            },
+            "callbacks": [langfuse_handler],
+            "metadata": {
+                "langfuse_session_id": session_id,
+                "langfuse_tags": ["food-receipt-agent"],
+            },
+        }
 
         for chunk, _ in self.agent.stream(
-            {"messages": messages},
+            {"messages": [{"role": "user", "content": user_input}]},
+            config=config,
             stream_mode="messages",
         ):
             if not isinstance(chunk, AIMessageChunk):
@@ -42,8 +55,8 @@ class Agents:
             if isinstance(content, str):
                 if content:
                     yield content
-                continue
-
-            for block in content:
-                if isinstance(block, dict) and block.get("type") == "text" and block.get("text"):
-                    yield block["text"]
+            else:
+                for block in content:
+                    if isinstance(block, dict) and block.get("type") == "text":
+                        if block.get("text"):
+                            yield block["text"]
