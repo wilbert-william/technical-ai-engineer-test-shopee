@@ -91,7 +91,7 @@ FastAPI ReDoc: http://localhost:8000/redoc
 ### 6. Stop the Application
 
 Stop all services:
-
+```
 docker compose down
-
+```
 Docker volumes are preserved by default, so persistent database data remains available when the services are started again.
