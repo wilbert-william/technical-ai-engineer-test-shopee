@@ -11,7 +11,7 @@ services:
       - qdrant_data:/qdrant/storage
 
   postgres:
-    image: postgres:17
+    image: postgres:15-alpine
     container_name: receipt-postgres
     restart: unless-stopped
     environment:
@@ -19,7 +19,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - "127.0.0.1:5432:5432"
+      - "127.0.0.1:5435:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:

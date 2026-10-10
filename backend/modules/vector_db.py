@@ -57,6 +57,11 @@ class VectorDB:
             ) from e
 
     def qdrant_retrieve(self, text: str, limit: int = 3) -> list[dict]:
+        if not self.qdrant_client.collection_exists(
+            collection_name=self.collection_name
+        ):
+            return []
+
         try:
             # Convert query text into an embedding vector
             vector = self.data_embeddings(text)

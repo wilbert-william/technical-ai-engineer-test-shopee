@@ -1,6 +1,9 @@
 from fastapi import FastAPI
 
-from backend.router import health, live, chat
+from backend.router import health, live, chat, upload_receipt
+from backend.utils.database import Base, engine
+
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="Food Receipt AI Agent",
@@ -11,3 +14,4 @@ app = FastAPI(
 app.include_router(health.router, prefix="")
 app.include_router(live.router, prefix="")
 app.include_router(chat.router, prefix="/api")
+app.include_router(upload_receipt.router, prefix="/api")

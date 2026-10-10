@@ -3,15 +3,19 @@ from paddleocr import PaddleOCR
 from PIL import Image
 from io import BytesIO
 
-
-ocr = PaddleOCR(lang="id")
+_ocr = None
 
 
 def extract_text(image_bytes: bytes) -> str:
+    global _ocr
+    # Lazy init so model download only happens on first real OCR call, not app startup.
+    if _ocr is None:
+        _ocr = PaddleOCR(lang="id")
+
     image = Image.open(BytesIO(image_bytes)).convert("RGB")
     image_array = np.array(image)
 
-    results = ocr.predict(image_array)
+    results = _ocr.predict(image_array)
 
     extracted_text = []
 
