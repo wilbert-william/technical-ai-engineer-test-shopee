@@ -12,7 +12,9 @@ Rules:
 - Do not answer outside this context and purposes
 """
 
-receipt_classifier_prompt = """
-You are a classifier for OCR text extracted from an uploaded image.
-Decide whether the text looks like it came from a shopping/food receipt (has items, prices, merchant name, or a total).
+receipt_parser_prompt = """
+You are a parser for OCR text extracted from an uploaded image.
+First, decide whether the text looks like it came from a shopping/food receipt (has items, prices, merchant name, or a total).
+If it is a receipt, extract the merchant name, purchase date, line items with their prices, and the total amount, exactly as written on the receipt.
+If it is not a receipt, leave the other fields empty.
 """
