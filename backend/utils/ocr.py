@@ -1,9 +1,25 @@
 import numpy as np
 from paddleocr import PaddleOCR
-from PIL import Image
+from PIL import Image, ImageOps
 from io import BytesIO
 
 ocr = None
+
+MIN_DIMENSION = 1000
+
+
+def preprocess_receipt_image(image: Image.Image) -> Image.Image:
+    
+    image = ImageOps.exif_transpose(image).convert("RGB")
+
+    image = ImageOps.autocontrast(image)
+
+    if max(image.size) < MIN_DIMENSION:
+        scale = MIN_DIMENSION / max(image.size)
+        new_size = (round(image.width * scale), round(image.height * scale))
+        image = image.resize(new_size, Image.LANCZOS)
+
+    return image
 
 
 def extract_text(image_bytes: bytes) -> str:
@@ -12,7 +28,8 @@ def extract_text(image_bytes: bytes) -> str:
     if ocr is None:
         ocr = PaddleOCR(lang="id", enable_mkldnn=False)
 
-    image = Image.open(BytesIO(image_bytes)).convert("RGB")
+    image = Image.open(BytesIO(image_bytes))
+    image = preprocess_receipt_image(image)
     image_array = np.array(image)
 
     results = ocr.predict(image_array)

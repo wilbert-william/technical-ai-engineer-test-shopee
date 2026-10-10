@@ -82,6 +82,9 @@ if "session_id" not in st.session_state:
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
+if "uploader_key" not in st.session_state:
+    st.session_state.uploader_key = 0
+
 # sidebar
 with st.sidebar:
     st.markdown("## Food Receipt AI")
@@ -125,6 +128,7 @@ with st.sidebar:
     uploaded_file = st.file_uploader(
         "Receipt image",
         type=["png", "jpg", "jpeg"],
+        key=f"receipt_uploader_{st.session_state.uploader_key}",
     )
 
     if uploaded_file and st.button(
@@ -150,21 +154,39 @@ with st.sidebar:
             response.raise_for_status()
 
             result = response.json()
-            st.success("Receipt processed successfully.")
-            st.write(result["text"])
+            st.session_state.uploader_key += 1
+            st.session_state.upload_message = ("success", result["text"])
+            st.rerun()
 
         except requests.exceptions.HTTPError:
-            st.error(
-                f"Upload failed: HTTP {response.status_code}"
+            st.session_state.uploader_key += 1
+            st.session_state.upload_message = (
+                "error",
+                f"Upload failed: HTTP {response.status_code} - {response.text or 'Empty response'}",
             )
-            st.code(response.text or "Empty response")
+            st.rerun()
 
         except requests.exceptions.JSONDecodeError:
-            st.error("Backend did not return valid JSON.")
-            st.code(response.text or "Empty response")
+            st.session_state.uploader_key += 1
+            st.session_state.upload_message = (
+                "error",
+                f"Backend did not return valid JSON: {response.text or 'Empty response'}",
+            )
+            st.rerun()
 
         except requests.exceptions.RequestException as exc:
-            st.error(f"Request failed: {exc}")
+            st.session_state.uploader_key += 1
+            st.session_state.upload_message = ("error", f"Request failed: {exc}")
+            st.rerun()
+
+    if "upload_message" in st.session_state:
+        kind, message = st.session_state.pop("upload_message")
+
+        if kind == "success":
+            st.success("Receipt processed successfully.")
+            st.write(message)
+        else:
+            st.error(message)
 
 
 # main chat

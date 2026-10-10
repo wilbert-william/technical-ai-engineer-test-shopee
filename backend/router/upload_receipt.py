@@ -15,7 +15,8 @@ load_vector_db = VectorDB()
 
 class ReceiptItem(BaseModel):
     name: str = Field(description="Name of the purchased item")
-    price: float = Field(description="Price of the item")
+    quantity: int = Field(default=1, description="Quantity of the item purchased")
+    unit_price: float = Field(description="Unit price of a single item")
 
 
 class ReceiptData(BaseModel):
