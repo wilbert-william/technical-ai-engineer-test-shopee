@@ -17,3 +17,5 @@ pillow
 langchain-text-splitters
 langgraph-checkpoint-postgres
 psycopg[binary,pool]
+streamlit
+requests

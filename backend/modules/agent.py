@@ -35,12 +35,14 @@ class Agents:
             "configurable": {
                 "thread_id": session_id,
             },
-            "callbacks": [langfuse_handler],
-            "metadata": {
+        }
+
+        if LANGFUSE_TRACING:
+            config["callbacks"] = [langfuse_handler]
+            config["metadata"] = {
                 "langfuse_session_id": session_id,
                 "langfuse_tags": ["food-receipt-agent"],
-            },
-        }
+            }
 
         for chunk, _ in self.agent.stream(
             {"messages": [{"role": "user", "content": user_input}]},
