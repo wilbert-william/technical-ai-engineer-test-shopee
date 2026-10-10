@@ -13,6 +13,7 @@ qdrant-client
 sqlalchemy
 psycopg[binary]
 paddleocr
+paddlepaddle
 pillow
 langchain-text-splitters
 langgraph-checkpoint-postgres

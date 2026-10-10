@@ -3,19 +3,19 @@ from paddleocr import PaddleOCR
 from PIL import Image
 from io import BytesIO
 
-_ocr = None
+ocr = None
 
 
 def extract_text(image_bytes: bytes) -> str:
-    global _ocr
+    global ocr
 
-    if _ocr is None:
-        _ocr = PaddleOCR(lang="id")
+    if ocr is None:
+        ocr = PaddleOCR(lang="id")
 
     image = Image.open(BytesIO(image_bytes)).convert("RGB")
     image_array = np.array(image)
 
-    results = _ocr.predict(image_array)
+    results = ocr.predict(image_array)
 
     extracted_text = []
 
