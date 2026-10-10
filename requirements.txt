@@ -15,3 +15,5 @@ psycopg[binary]
 paddleocr
 pillow
 langchain-text-splitters
+langgraph-checkpoint-postgres
+psycopg[binary,pool]

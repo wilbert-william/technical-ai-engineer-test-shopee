@@ -51,3 +51,6 @@ Please check [cosine-similarity.ipynb](./2.coding_test/4.cosine-similarity.ipynb
 - **Containerization:** Docker
 - **Container Orchestration:** Docker Compose
 - **CI/CD:** GitHub Actions
+
+
+## How to run the app

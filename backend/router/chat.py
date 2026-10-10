@@ -19,26 +19,36 @@ class ChatRequest(BaseModel):
 @router.post("/chat")
 def post_chat(request: ChatRequest):
     session_id = request.session_id
-    history = []
 
-    if session_id and session_manage.session_exists(session_id):
-        history = session_manage.get_messages(session_id)
-    else:
+    if not session_id or not session_manage.session_exists(session_id):
         session_id = session_manage.create_session()
 
-    session_manage.save_message(session_id, "user", request.user_input)
+    session_manage.save_message(
+        session_id,
+        "user",
+        request.user_input,
+    )
 
     def event_stream():
         answer = ""
+
         try:
             yield f"data: {json.dumps({'session_id': session_id})}\n\n"
 
-            for token in load_agent.ai_agent(request.user_input, history):
+            for token in load_agent.ai_agent(
+                request.user_input,
+                session_id,
+            ):
                 answer += token
                 payload = json.dumps({"answer": token})
                 yield f"data: {payload}\n\n"
 
-            session_manage.save_message(session_id, "assistant", answer)
+            session_manage.save_message(
+                session_id,
+                "assistant",
+                answer,
+            )
+
             yield 'data: {"completed": true}\n\n'
 
         except Exception:

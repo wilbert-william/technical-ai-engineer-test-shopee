@@ -8,7 +8,7 @@ _ocr = None
 
 def extract_text(image_bytes: bytes) -> str:
     global _ocr
-    # Lazy init so model download only happens on first real OCR call, not app startup.
+
     if _ocr is None:
         _ocr = PaddleOCR(lang="id")
 
