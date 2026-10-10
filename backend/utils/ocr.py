@@ -10,7 +10,7 @@ def extract_text(image_bytes: bytes) -> str:
     global ocr
 
     if ocr is None:
-        ocr = PaddleOCR(lang="id")
+        ocr = PaddleOCR(lang="id", enable_mkldnn=False)
 
     image = Image.open(BytesIO(image_bytes)).convert("RGB")
     image_array = np.array(image)

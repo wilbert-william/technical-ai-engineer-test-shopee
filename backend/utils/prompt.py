@@ -11,3 +11,8 @@ Rules:
 - For questions involving totals or calculations, calculate using the available receipt data.
 - Do not answer outside this context and purposes
 """
+
+receipt_classifier_prompt = """
+You are a classifier for OCR text extracted from an uploaded image.
+Decide whether the text looks like it came from a shopping/food receipt (has items, prices, merchant name, or a total).
+"""
