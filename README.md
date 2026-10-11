@@ -65,6 +65,9 @@ cd technical-ai-engineer-test-shopee
 ### 2. Configure Environment Variables
 
 Create a .env file from the example: [.env.example](.env.example)
+For Docker Compose, `DATABASE_URL` must use `postgres:5432` (the Compose service
+name and its internal port). The host port `5435` is only for connecting from
+tools running directly on the host machine.
 
 ### 3. Start All Services
 
@@ -84,9 +87,14 @@ docker compose ps
 
 Once the services are running, access the API documentation at:
 
-FastAPI Swagger UI: http://localhost:8000/docs
+Streamlit UI: http://localhost:8501
 
-FastAPI ReDoc: http://localhost:8000/redoc
+FastAPI Swagger UI: http://localhost:8001/docs
+
+FastAPI ReDoc: http://localhost:8001/redoc
+
+From another device on the same network, replace `localhost` with the host
+machine's IP address (for example, `http://192.168.1.36:8501`)
 
 ### 6. Stop the Application
 
