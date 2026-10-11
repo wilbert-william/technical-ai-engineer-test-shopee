@@ -20,10 +20,20 @@ class Agents:
         )
 
     def rag_tools(self, text: str, top_k: int = 3) -> list[dict]:
-        """AI RAG tools to retrieve vector db,
-        input:
-            text: string, initial input for vector db query
-            top_k: integer, how many data will be retrieve, with initial value 3, you can add more limit to this input
+        """Find uploaded receipt records that are relevant to a natural-language query.
+
+        Call this tool for questions about the user's receipts, merchants, items,
+        purchase dates, or expenses. Make the query specific enough to include
+        names, date ranges, or item terms mentioned by the user. The result for
+        each match includes structured fields (merchant_name, date, items,
+        quantity, unit_price, total) and the raw OCR `text`. Use structured fields
+        for facts and calculations; consult raw text only as supporting context
+        when a structured value is missing or unclear. Results are ranked by
+        semantic relevance, so inspect each returned payload before answering.
+
+        Args:
+            text: Natural-language description of the receipt information to find.
+            top_k: Maximum number of relevant receipt records to return (default 3).
         """
         return self.load_vector_db.qdrant_retrieve(
             text=text,
