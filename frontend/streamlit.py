@@ -1,10 +1,12 @@
 
 import json
 import os
+from io import BytesIO
 
 import requests
 import streamlit as st
 from dotenv import load_dotenv
+from PIL import Image, UnidentifiedImageError
 
 load_dotenv()
 
@@ -125,20 +127,39 @@ with st.sidebar:
 
     st.markdown("### Upload Receipt")
 
+    max_receipt_size = 5 * 1024 * 1024
     uploaded_file = st.file_uploader(
         "Receipt image",
         type=["png", "jpg", "jpeg"],
+        max_upload_size=5,
         key=f"receipt_uploader_{st.session_state.uploader_key}",
     )
 
-    if uploaded_file and st.button(
+    receipt_bytes = uploaded_file.getvalue() if uploaded_file else b""
+    upload_error = None
+    if uploaded_file:
+        if len(receipt_bytes) > max_receipt_size:
+            upload_error = "Ukuran file maksimal 5 MB."
+        else:
+            try:
+                with Image.open(BytesIO(receipt_bytes)) as image:
+                    if image.format not in {"PNG", "JPEG"}:
+                        raise ValueError("Unsupported image format")
+                    image.verify()
+            except (UnidentifiedImageError, OSError, ValueError):
+                upload_error = "File harus berupa gambar PNG atau JPEG yang valid."
+
+        if upload_error:
+            st.error(upload_error)
+
+    if uploaded_file and not upload_error and st.button(
         "Upload",
         use_container_width=True,
     ):
         files = {
             "file": (
                 uploaded_file.name,
-                uploaded_file.getvalue(),
+                receipt_bytes,
                 uploaded_file.type,
             )
         }
