@@ -14,18 +14,18 @@ from backend.utils.prompt import receipt_parser_prompt
 
 router = APIRouter(tags=["Upload Receipt"])
 load_vector_db = VectorDB()
-MAX_UPLOAD_SIZE = 5 * 1024 * 1024
-MAX_PROCESSED_IMAGE_SIZE = 500 * 1024
 
 
 def compress_receipt_image(image_bytes: bytes) -> bytes:
+    max_processed_image_size = 500 * 1024
+
     with Image.open(BytesIO(image_bytes)) as source:
         if source.format not in {"PNG", "JPEG"}:
             raise ValueError("File must be a PNG or JPEG image.")
 
         source.verify()
 
-    if len(image_bytes) <= MAX_PROCESSED_IMAGE_SIZE:
+    if len(image_bytes) <= max_processed_image_size:
         return image_bytes
 
     with Image.open(BytesIO(image_bytes)) as source:
@@ -38,6 +38,14 @@ def compress_receipt_image(image_bytes: bytes) -> bytes:
         else:
             image = image.convert("RGB")
 
+    estimated_scale = (max_processed_image_size / len(image_bytes)) ** 0.5
+    if estimated_scale < 1:
+        new_size = (
+            max(1, int(image.width * estimated_scale)),
+            max(1, int(image.height * estimated_scale)),
+        )
+        image = image.resize(new_size, Image.Resampling.LANCZOS)
+
     while True:
         for quality in (88, 80, 72, 64, 56, 48, 40, 32):
             output = BytesIO()
@@ -49,7 +57,7 @@ def compress_receipt_image(image_bytes: bytes) -> bytes:
                 progressive=True,
             )
             compressed = output.getvalue()
-            if len(compressed) <= MAX_PROCESSED_IMAGE_SIZE:
+            if len(compressed) <= max_processed_image_size:
                 return compressed
 
         width, height = image.size
@@ -96,15 +104,16 @@ def parse_receipt(text: str) -> ReceiptData:
 
 @router.post("/upload_receipt")
 async def upload_receipt(file: UploadFile = File(...)):
-    image_bytes = await file.read(MAX_UPLOAD_SIZE + 1)
-    if len(image_bytes) > MAX_UPLOAD_SIZE:
+    max_upload_size = 5 * 1024 * 1024
+    image_bytes = await file.read(max_upload_size + 1)
+    if len(image_bytes) > max_upload_size:
         raise HTTPException(
             status_code=413,
             detail="Image size must be 5 MB or less.",
         )
 
     try:
-        image_bytes = compress_receipt_image(image_bytes)
+        image_bytes = await run_in_threadpool(compress_receipt_image, image_bytes)
     except (UnidentifiedImageError, OSError, ValueError) as exc:
         raise HTTPException(
             status_code=422,
