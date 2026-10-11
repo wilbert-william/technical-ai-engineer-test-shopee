@@ -1,7 +1,9 @@
 from datetime import datetime, timezone
+from io import BytesIO
 from uuid import uuid4
 
 from fastapi import APIRouter, File, HTTPException, UploadFile
+from PIL import Image, ImageOps, UnidentifiedImageError
 from pydantic import BaseModel, Field
 
 from backend.modules.vector_db import VectorDB
@@ -11,6 +13,50 @@ from backend.utils.prompt import receipt_parser_prompt
 
 router = APIRouter(tags=["Upload Receipt"])
 load_vector_db = VectorDB()
+MAX_UPLOAD_SIZE = 5 * 1024 * 1024
+MAX_PROCESSED_IMAGE_SIZE = 500 * 1024
+
+
+def compress_receipt_image(image_bytes: bytes) -> bytes:
+    with Image.open(BytesIO(image_bytes)) as source:
+        if source.format not in {"PNG", "JPEG"}:
+            raise ValueError("File must be a PNG or JPEG image.")
+
+        source.verify()
+
+    with Image.open(BytesIO(image_bytes)) as source:
+        image = ImageOps.exif_transpose(source)
+        if image.mode in {"RGBA", "LA"} or "transparency" in image.info:
+            rgba_image = image.convert("RGBA")
+            background = Image.new("RGB", rgba_image.size, "white")
+            background.paste(rgba_image, mask=rgba_image.getchannel("A"))
+            image = background
+        else:
+            image = image.convert("RGB")
+
+    if len(image_bytes) <= MAX_PROCESSED_IMAGE_SIZE:
+        return image_bytes
+
+    while True:
+        for quality in (88, 80, 72, 64, 56, 48, 40, 32):
+            output = BytesIO()
+            image.save(
+                output,
+                format="JPEG",
+                quality=quality,
+                optimize=True,
+                progressive=True,
+            )
+            compressed = output.getvalue()
+            if len(compressed) <= MAX_PROCESSED_IMAGE_SIZE:
+                return compressed
+
+        width, height = image.size
+        if max(width, height) <= 256:
+            raise ValueError("Image could not be compressed below 500 KB.")
+
+        new_size = (max(1, int(width * 0.8)), max(1, int(height * 0.8)))
+        image = image.resize(new_size, Image.Resampling.LANCZOS)
 
 
 class ReceiptItem(BaseModel):
@@ -49,7 +95,21 @@ def parse_receipt(text: str) -> ReceiptData:
 
 @router.post("/upload_receipt")
 async def upload_receipt(file: UploadFile = File(...)):
-    image_bytes = await file.read()
+    image_bytes = await file.read(MAX_UPLOAD_SIZE + 1)
+    if len(image_bytes) > MAX_UPLOAD_SIZE:
+        raise HTTPException(
+            status_code=413,
+            detail="Image size must be 5 MB or less.",
+        )
+
+    try:
+        image_bytes = compress_receipt_image(image_bytes)
+    except (UnidentifiedImageError, OSError, ValueError) as exc:
+        raise HTTPException(
+            status_code=422,
+            detail=str(exc) or "File must be a valid PNG or JPEG image.",
+        ) from exc
+
     text = extract_text(image_bytes)
 
     if not text.strip():
