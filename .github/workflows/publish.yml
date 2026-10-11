@@ -1,4 +1,4 @@
-name: Build and Deploy Food Receipt AI
+name: Build and Deploy receipt AI (shopee test)
 
 on:
   push:
@@ -84,6 +84,7 @@ jobs:
         run: |
           set -euo pipefail
           umask 077
+
           cat > "$GITHUB_WORKSPACE/.env.deploy" <<EOF
           OPENAI_API_KEY=${OPENAI_API_KEY}
           OPENAI_MODEL=${OPENAI_MODEL}
@@ -102,10 +103,9 @@ jobs:
           EOF
 
       - name: Deploy application
-        env:
-          IMAGE_TAG: ${{ github.sha }}
         run: |
           set -euo pipefail
+
           docker compose \
             --project-name food-receipt-ai \
             --env-file "$GITHUB_WORKSPACE/.env.deploy" \
@@ -115,26 +115,50 @@ jobs:
       - name: Verify deployment
         run: |
           set -euo pipefail
+
           docker compose \
             --project-name food-receipt-ai \
             --env-file "$GITHUB_WORKSPACE/.env.deploy" \
             -f "$GITHUB_WORKSPACE/docker-compose.yml" \
             ps
 
-          for i in $(seq 1 30); do
-            if curl --fail --silent http://127.0.0.1:8001/health >/dev/null; then
+          echo "Waiting for backend health..."
+
+          for i in $(seq 1 24); do
+            if curl --fail --silent --show-error \
+              http://127.0.0.1:8001/health; then
+              echo ""
               echo "Backend health check passed"
               break
             fi
-            if [ "$i" -eq 30 ]; then
+
+            if [ "$i" -eq 24 ]; then
               echo "Backend health check failed"
               docker logs --tail 100 receipt-backend
               exit 1
             fi
-            sleep 2
+
+            sleep 5
           done
 
-          curl --fail --silent http://127.0.0.1:8501/_stcore/health
+          echo "Waiting for frontend health..."
+
+          for i in $(seq 1 24); do
+            if curl --fail --silent \
+              http://127.0.0.1:8501/_stcore/health; then
+              echo ""
+              echo "Frontend health check passed"
+              exit 0
+            fi
+
+            if [ "$i" -eq 24 ]; then
+              echo "Frontend health check failed"
+              docker logs --tail 100 receipt-frontend
+              exit 1
+            fi
+
+            sleep 5
+          done
 
       - name: Remove temporary environment file
         if: always()
