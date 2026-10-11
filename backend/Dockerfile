@@ -15,6 +15,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Pre-download PaddleOCR models 
+RUN python -c "from paddleocr import PaddleOCR; PaddleOCR(lang='id', enable_mkldnn=False)"
+
 COPY backend/ ./backend/
 
 EXPOSE 8000

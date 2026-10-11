@@ -16,18 +16,22 @@ router = APIRouter(tags=["Upload Receipt"])
 load_vector_db = VectorDB()
 
 
+# Kompres gambar receipt sampai ukurannya <=500KB sebelum masuk OCR.
 def compress_receipt_image(image_bytes: bytes) -> bytes:
     max_processed_image_size = 500 * 1024
 
+    # Validasi file harus PNG/JPEG yang valid.
     with Image.open(BytesIO(image_bytes)) as source:
         if source.format not in {"PNG", "JPEG"}:
             raise ValueError("File must be a PNG or JPEG image.")
 
         source.verify()
 
+    # kalau file 500kb, langsung lanjut
     if len(image_bytes) <= max_processed_image_size:
         return image_bytes
 
+    # preprocessing gambar sebelum ke ocr
     with Image.open(BytesIO(image_bytes)) as source:
         image = ImageOps.exif_transpose(source)
         if image.mode in {"RGBA", "LA"} or "transparency" in image.info:
@@ -38,6 +42,7 @@ def compress_receipt_image(image_bytes: bytes) -> bytes:
         else:
             image = image.convert("RGB")
 
+    # Perkirakan langsung skala resize yang dibutuhkan dari rasio ukuran target vs ukuran asli,
     estimated_scale = (max_processed_image_size / len(image_bytes)) ** 0.5
     if estimated_scale < 1:
         new_size = (
@@ -46,6 +51,7 @@ def compress_receipt_image(image_bytes: bytes) -> bytes:
         )
         image = image.resize(new_size, Image.Resampling.LANCZOS)
 
+    # coba turunkan quality dulu, kalau masih besar baru resize lagi
     while True:
         for quality in (88, 80, 72, 64, 56, 48, 40, 32):
             output = BytesIO()
@@ -93,6 +99,7 @@ class ReceiptData(BaseModel):
 receipt_parser = load_llm.with_structured_output(ReceiptData)
 
 
+# Ubah teks hasil OCR jadi data struktur receipt (merchant, items, total, dst) lewat LLM.
 def parse_receipt(text: str) -> ReceiptData:
     return receipt_parser.invoke(
         [
@@ -102,6 +109,7 @@ def parse_receipt(text: str) -> ReceiptData:
     )
 
 
+# Endpoint utama: compress image -> OCR -> parse LLM -> embed -> simpan ke Qdrant.
 @router.post("/upload_receipt")
 async def upload_receipt(file: UploadFile = File(...)):
     max_upload_size = 5 * 1024 * 1024
