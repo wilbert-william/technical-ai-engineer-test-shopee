@@ -127,11 +127,11 @@ with st.sidebar:
 
     st.markdown("### Upload Receipt")
 
-    max_receipt_size = 5 * 1024 * 1024
+    max_receipt_size = 1 * 1024 * 1024
     uploaded_file = st.file_uploader(
         "Receipt image",
         type=["png", "jpg", "jpeg"],
-        max_upload_size=5,
+        max_upload_size=1,
         key=f"receipt_uploader_{st.session_state.uploader_key}",
     )
 
@@ -139,7 +139,7 @@ with st.sidebar:
     upload_error = None
     if uploaded_file:
         if len(receipt_bytes) > max_receipt_size:
-            upload_error = "Ukuran file maksimal 5 MB."
+            upload_error = "Ukuran file maksimal 1 MB."
         else:
             try:
                 with Image.open(BytesIO(receipt_bytes)) as image:
