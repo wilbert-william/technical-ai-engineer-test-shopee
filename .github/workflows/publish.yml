@@ -8,7 +8,10 @@ on:
 
 permissions:
   contents: read
-  packages: write
+
+concurrency:
+  group: receipt-ai-${{ github.ref }}
+  cancel-in-progress: false
 
 env:
   REGISTRY: ghcr.io
@@ -17,6 +20,17 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - component: backend
+            dockerfile: backend/Dockerfile
+          - component: frontend
+            dockerfile: frontend/Dockerfile
 
     steps:
       - name: Checkout repository
@@ -32,30 +46,26 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push backend
+      - name: Build and push ${{ matrix.component }}
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: backend/Dockerfile
+          file: ${{ matrix.dockerfile }}
           push: true
           tags: |
-            ${{ env.IMAGE_BASE }}-backend:${{ github.sha }}
-            ${{ env.IMAGE_BASE }}-backend:latest
-
-      - name: Build and push frontend
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: frontend/Dockerfile
-          push: true
-          tags: |
-            ${{ env.IMAGE_BASE }}-frontend:${{ github.sha }}
-            ${{ env.IMAGE_BASE }}-frontend:latest
+            ${{ env.IMAGE_BASE }}-${{ matrix.component }}:${{ github.sha }}
+            ${{ env.IMAGE_BASE }}-${{ matrix.component }}:latest
+          cache-from: type=gha,scope=${{ matrix.component }}
+          cache-to: type=gha,scope=${{ matrix.component }},mode=max
 
   deploy:
     needs: build
     runs-on: [self-hosted, Linux, X64]
     environment: production
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      packages: read
 
     steps:
       - name: Checkout repository
@@ -122,43 +132,34 @@ jobs:
             -f "$GITHUB_WORKSPACE/docker-compose.yml" \
             ps
 
-          echo "Waiting for backend health..."
+          check_health() {
+            local name="$1"
+            local url="$2"
 
-          for i in $(seq 1 24); do
-            if curl --fail --silent --show-error \
-              http://127.0.0.1:8001/health; then
-              echo ""
-              echo "Backend health check passed"
-              break
-            fi
+            echo "Waiting for ${name} health..."
+            for attempt in $(seq 1 24); do
+              if curl --fail --silent --output /dev/null --max-time 3 "$url"; then
+                echo "${name} health check passed"
+                return 0
+              fi
 
-            if [ "$i" -eq 24 ]; then
-              echo "Backend health check failed"
-              docker logs --tail 100 receipt-backend
-              exit 1
-            fi
+              if [ "$attempt" -lt 24 ]; then
+                sleep 5
+              fi
+            done
 
-            sleep 5
-          done
+            echo "${name} health check failed"
+            docker logs --tail 100 "receipt-${name}"
+            return 1
+          }
 
-          echo "Waiting for frontend health..."
+          check_health backend http://127.0.0.1:8001/health &
+          backend_check=$!
+          check_health frontend http://127.0.0.1:8501/_stcore/health &
+          frontend_check=$!
 
-          for i in $(seq 1 24); do
-            if curl --fail --silent \
-              http://127.0.0.1:8501/_stcore/health; then
-              echo ""
-              echo "Frontend health check passed"
-              exit 0
-            fi
-
-            if [ "$i" -eq 24 ]; then
-              echo "Frontend health check failed"
-              docker logs --tail 100 receipt-frontend
-              exit 1
-            fi
-
-            sleep 5
-          done
+          wait "$backend_check"
+          wait "$frontend_check"
 
       - name: Remove temporary environment file
         if: always()
