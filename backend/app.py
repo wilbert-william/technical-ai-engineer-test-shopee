@@ -8,6 +8,7 @@ from backend.utils.checkpointer import close_checkpointer
 from backend.utils.init_qdrant import init_qdrant
 from backend.utils.init_postgre import init_postgre
 from backend.utils.langfuse import flush_langfuse
+from backend.utils.ocr import initialize_ocr
 
 logging.basicConfig(
     level=logging.INFO,
@@ -29,6 +30,8 @@ async def lifespan(app: FastAPI):
     logger.info("[2/2] Initializing Qdrant...")
     init_qdrant()
     logger.info("[2/2] Qdrant initialized successfully.")
+
+    initialize_ocr()
 
     logger.info("All services initialized successfully.")
 

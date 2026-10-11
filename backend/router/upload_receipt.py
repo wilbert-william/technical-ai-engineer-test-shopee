@@ -5,6 +5,7 @@ from uuid import uuid4
 from fastapi import APIRouter, File, HTTPException, UploadFile
 from PIL import Image, ImageOps, UnidentifiedImageError
 from pydantic import BaseModel, Field
+from starlette.concurrency import run_in_threadpool
 
 from backend.modules.vector_db import VectorDB
 from backend.utils.llm import load_llm
@@ -24,6 +25,9 @@ def compress_receipt_image(image_bytes: bytes) -> bytes:
 
         source.verify()
 
+    if len(image_bytes) <= MAX_PROCESSED_IMAGE_SIZE:
+        return image_bytes
+
     with Image.open(BytesIO(image_bytes)) as source:
         image = ImageOps.exif_transpose(source)
         if image.mode in {"RGBA", "LA"} or "transparency" in image.info:
@@ -33,9 +37,6 @@ def compress_receipt_image(image_bytes: bytes) -> bytes:
             image = background
         else:
             image = image.convert("RGB")
-
-    if len(image_bytes) <= MAX_PROCESSED_IMAGE_SIZE:
-        return image_bytes
 
     while True:
         for quality in (88, 80, 72, 64, 56, 48, 40, 32):
@@ -110,7 +111,7 @@ async def upload_receipt(file: UploadFile = File(...)):
             detail=str(exc) or "File must be a valid PNG or JPEG image.",
         ) from exc
 
-    text = extract_text(image_bytes)
+    text = await run_in_threadpool(extract_text, image_bytes)
 
     if not text.strip():
         raise HTTPException(
@@ -118,7 +119,7 @@ async def upload_receipt(file: UploadFile = File(...)):
             detail="No readable text found in the image.",
         )
 
-    parsed = parse_receipt(text)
+    parsed = await run_in_threadpool(parse_receipt, text)
 
     if not parsed.is_receipt:
         raise HTTPException(
@@ -128,11 +129,13 @@ async def upload_receipt(file: UploadFile = File(...)):
 
     point_id = str(uuid4())
     input_datetime = datetime.now(timezone.utc).isoformat()
-    vector = load_vector_db.data_embeddings(text)
-    result = load_vector_db.qdrant_insert_data(
-        point_id=point_id,
-        vector=vector,
-        payload={
+    vector = await run_in_threadpool(load_vector_db.data_embeddings, text)
+
+    result = await run_in_threadpool(
+        load_vector_db.qdrant_insert_data,
+        point_id,
+        vector,
+        {
             "text": text,
             "input_datetime": input_datetime,
             "merchant_name": parsed.merchant_name,
@@ -141,7 +144,6 @@ async def upload_receipt(file: UploadFile = File(...)):
             "total": parsed.total,
         },
     )
-
     return {
         "id": point_id,
         "text": text,

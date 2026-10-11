@@ -5,6 +5,14 @@ from io import BytesIO
 
 ocr = None
 
+
+def initialize_ocr():
+    global ocr
+
+    if ocr is None:
+        ocr = PaddleOCR(lang="id", enable_mkldnn=False)
+
+
 def preprocess_receipt_image(image: Image.Image) -> Image.Image:
     
     image = ImageOps.exif_transpose(image).convert("RGB")
@@ -20,10 +28,7 @@ def preprocess_receipt_image(image: Image.Image) -> Image.Image:
 
 
 def extract_text(image_bytes: bytes) -> str:
-    global ocr
-
-    if ocr is None:
-        ocr = PaddleOCR(lang="id", enable_mkldnn=False)
+    initialize_ocr()
 
     image = Image.open(BytesIO(image_bytes))
     image = preprocess_receipt_image(image)

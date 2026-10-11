@@ -159,7 +159,7 @@ with st.sidebar:
                 response = requests.post(
                     f"{backend_url}/api/upload_receipt",
                     files=files,
-                    timeout=180,
+                    timeout=300,
                 )
 
             response.raise_for_status()
