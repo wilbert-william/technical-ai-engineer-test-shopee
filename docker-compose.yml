@@ -52,6 +52,7 @@ services:
       LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-}
       LANGFUSE_BASE_URL: ${LANGFUSE_BASE_URL:-https://jp.cloud.langfuse.com}
     ports:
+      - "127.0.0.1:8001:8000"
       - "192.168.1.36:8001:8000"
     depends_on:
       postgres:
@@ -66,6 +67,7 @@ services:
     environment:
       BACKEND_URL: http://backend:8000
     ports:
+      - "127.0.0.1:8501:8501"
       - "192.168.1.36:8501:8501"
     depends_on:
       backend:
