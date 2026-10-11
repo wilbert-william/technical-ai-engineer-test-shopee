@@ -1,3 +1,6 @@
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
 from langchain.agents import create_agent
 from langchain_core.messages import AIMessageChunk
 
@@ -10,14 +13,7 @@ from backend.utils.langfuse import LANGFUSE_TRACING, langfuse_handler
 class Agents:
     def __init__(self):
         self.llm = llm.load_llm
-        self.system_prompt = prompt.system_prompt
         self.load_vector_db = VectorDB()
-        self.agent = create_agent(
-            model=self.llm,
-            system_prompt=self.system_prompt,
-            tools=[self.rag_tools],
-            checkpointer=checkpointer
-        )
 
     def rag_tools(self, text: str, top_k: int = 3) -> list[dict]:
         """Find uploaded receipt records that are relevant to a natural-language query.
@@ -41,6 +37,18 @@ class Agents:
         )
 
     def ai_agent(self, user_input: str, session_id: str):
+        current_datetime = datetime.now(ZoneInfo("Asia/Jakarta")).isoformat(
+            timespec="seconds"
+        )
+        agent = create_agent(
+            model=self.llm,
+            system_prompt=prompt.system_prompt.format(
+                current_datetime=current_datetime
+            ),
+            tools=[self.rag_tools],
+            checkpointer=checkpointer,
+        )
+
         config = {
             "configurable": {
                 "thread_id": session_id,
@@ -54,7 +62,7 @@ class Agents:
                 "langfuse_tags": ["food-receipt-agent"],
             }
 
-        for chunk, _ in self.agent.stream(
+        for chunk, _ in agent.stream(
             {"messages": [{"role": "user", "content": user_input}]},
             config=config,
             stream_mode="messages",
